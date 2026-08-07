@@ -15,10 +15,8 @@ backend/app/temp_uploads/*
 
 # Environment variables
 .env
-backend/.env
-frontend/.env
-*.env.local
-*.env.*.local
+*.env
+*.env.*
 
 # Node.js
 node_modules/
