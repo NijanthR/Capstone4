@@ -6,6 +6,8 @@ import shutil
 
 router = APIRouter()
 
+active_pdf_path = None
+
 class SearchRequest(BaseModel):
     query: str
 
@@ -43,6 +45,9 @@ def upload_paper(
             shutil.copyfileobj(file.file, buffer)
             
         intent = "upload_own" if is_own_research else "upload_public"
+        
+        global active_pdf_path
+        active_pdf_path = file_path
         
         initial_state = {
             "messages": [],
@@ -115,6 +120,9 @@ async def select_paper(request: SelectPaperRequest):
             raise HTTPException(status_code=400, detail="Failed to download PDF from the provided URL (Connection/HTTP error).")
             
         # 2. Invoke Graph (upload_public runs parse -> summarize)
+        global active_pdf_path
+        active_pdf_path = file_path
+
         initial_state = {
             "messages": [],
             "intent": "upload_public",
@@ -150,7 +158,7 @@ def ask_question(request: QARequest):
             "messages": [],
             "intent": "qa",
             "query": request.query,
-            "pdf_path": None,
+            "pdf_path": active_pdf_path,
             "is_own_research": False,
             "results": {}
         }

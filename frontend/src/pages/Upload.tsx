@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Upload as UploadIcon, CheckCircle, FileText, AlertCircle } from 'lucide-react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 export default function Upload() {
+  const navigate = useNavigate();
   const [file, setFile] = useState<File | null>(null);
   const [isOwnResearch, setIsOwnResearch] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -91,16 +93,51 @@ export default function Upload() {
           </div>
           
           {isOwnResearch ? (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-2xl font-bold mb-4 flex items-center">
-                <AlertCircle className="w-6 h-6 mr-2 text-purple-600" />
-                Novelty Report
-              </h2>
-              <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap font-sans text-gray-700">
-                  {results.novelty_report}
-                </pre>
+            <div className="space-y-8">
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 className="text-2xl font-bold mb-4 flex items-center">
+                  <AlertCircle className="w-6 h-6 mr-2 text-purple-600" />
+                  Novelty Report
+                </h2>
+                <div className="prose max-w-none">
+                  <pre className="whitespace-pre-wrap font-sans text-gray-700">
+                    {results.novelty_report}
+                  </pre>
+                </div>
               </div>
+
+              {results.similar_papers && results.similar_papers.length > 0 && (
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                  <h2 className="text-2xl font-bold mb-4 flex items-center text-gray-900">
+                    <FileText className="w-6 h-6 mr-2 text-primary-600" />
+                    Related & Similar Papers Found
+                  </h2>
+                  <div className="space-y-4">
+                    {results.similar_papers.map((paper: any, idx: number) => (
+                      <div key={idx} className="p-4 border border-gray-200 rounded-xl hover:bg-gray-50/50 transition">
+                        <h3 className="font-semibold text-gray-900">{paper.title}</h3>
+                        <p className="text-xs text-gray-500 mb-2">
+                          {paper.authors && paper.authors.length > 0 ? paper.authors.join(', ') : 'Unknown Authors'}
+                          {paper.source && ` • Source: ${paper.source}`}
+                        </p>
+                        {paper.abstract && (
+                          <p className="text-sm text-gray-600 line-clamp-3 mb-3 leading-relaxed">{paper.abstract}</p>
+                        )}
+                        {paper.pdf_url && (
+                          <a 
+                            href={paper.pdf_url} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="inline-flex items-center text-primary-600 hover:text-primary-800 text-sm font-medium"
+                          >
+                            View PDF
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -121,9 +158,10 @@ export default function Upload() {
               Upload Another
             </button>
             <button 
-              className="ml-auto px-8 py-2 bg-white text-black border-2 border-black rounded-xl hover:bg-gray-100 transition text-sm font-medium"
+              onClick={() => navigate('/chat')}
+              className="ml-auto px-8 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition text-sm font-medium"
             >
-              next
+              Start Chatting about this paper
             </button>
           </div>
         </div>

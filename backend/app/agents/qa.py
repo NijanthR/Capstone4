@@ -10,7 +10,8 @@ def qa_agent(state: AgentState) -> dict:
     if not query:
         query = state["messages"][-1].content
         
-    retriever = rag_service.get_retriever()
+    pdf_path = state.get("pdf_path")
+    retriever = rag_service.get_retriever(pdf_path)
     docs = retriever.invoke(query)
     
     context = "\n\n".join([doc.page_content for doc in docs])

@@ -30,8 +30,11 @@ class RAGService:
         else:
             print("Warning: API_KEY not set. Cannot embed documents.")
 
-    def get_retriever(self):
+    def get_retriever(self, pdf_path: str = None):
         """Get retriever for QA"""
-        return self.vector_store.as_retriever(search_kwargs={"k": 5})
+        search_kwargs = {"k": 15}
+        if pdf_path:
+            search_kwargs["filter"] = {"source": pdf_path}
+        return self.vector_store.as_retriever(search_kwargs=search_kwargs)
 
 rag_service = RAGService()
