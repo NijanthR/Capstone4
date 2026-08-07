@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases and storage
+*.db
+*.sqlite3
+chroma_db/
+backend/app/chroma_db/
+backend/app/researchai.db
+backend/app/temp_uploads/*
+!backend/app/temp_uploads/.gitkeep
+
+# Environment variables
+.env
+backend/.env
+frontend/.env
+*.env.local
+*.env.*.local
+
+# Node.js
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+frontend/dist/
+build/
+
+# IDEs and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

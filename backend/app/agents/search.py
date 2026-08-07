@@ -44,7 +44,7 @@ def cosine_sim(a, b):
 
 def search_arxiv_sync(query):
     client = arxiv.Client()
-    search = arxiv.Search(query=query, max_results=15, sort_by=arxiv.SortCriterion.Relevance)
+    search = arxiv.Search(query=query, max_results=50, sort_by=arxiv.SortCriterion.Relevance)
     results = []
     for r in client.results(search):
         pdf_url = r.pdf_url
@@ -71,7 +71,7 @@ def search_ddg_sync(query):
         forbidden_domains = ["linkedin.com", "youtube.com", "medium.com", "github.com"]
         
         with DDGS() as ddgs:
-            for r in ddgs.text(search_query, max_results=10):
+            for r in ddgs.text(search_query, max_results=30):
                 href = r.get("href", "").lower()
                 
                 # Must not contain forbidden domains
@@ -101,7 +101,7 @@ def search_ddg_sync(query):
 
 async def search_semantic_scholar(query, client):
     encoded_query = quote(query)
-    url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={encoded_query}&limit=5&fields=title,authors,abstract,openAccessPdf,citationCount,year,externalIds"
+    url = f"https://api.semanticscholar.org/graph/v1/paper/search?query={encoded_query}&limit=30&fields=title,authors,abstract,openAccessPdf,citationCount,year,externalIds"
     headers = {}
     if settings.SEMANTIC_SCHOLAR_API_KEY:
         headers["x-api-key"] = settings.SEMANTIC_SCHOLAR_API_KEY
@@ -265,7 +265,7 @@ def rank_results(query, papers):
 
     # Sort by score descending
     papers.sort(key=lambda x: x["score"], reverse=True)
-    return papers[:15]
+    return papers[:30]
 
 def search_agent(state: AgentState) -> dict:
     """Search for research papers across multiple APIs."""
