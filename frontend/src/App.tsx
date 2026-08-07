@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { BookOpen, Upload as UploadIcon, Search as SearchIcon } from 'lucide-react';
+import { BookOpen, Upload as UploadIcon, Search as SearchIcon, MessageSquare } from 'lucide-react';
 
 function Dashboard() {
   return (
@@ -20,6 +20,10 @@ function Dashboard() {
         <Link to="/upload" className="inline-flex items-center justify-center px-8 py-4 border border-gray-300 text-base font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 md:text-lg shadow-sm hover:shadow transition-all">
           <UploadIcon className="w-5 h-5 mr-2" />
           Upload PDF
+        </Link>
+        <Link to="/chat" className="inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-xl text-white bg-green-600 hover:bg-green-700 md:text-lg shadow-lg hover:shadow-xl transition-all">
+          <MessageSquare className="w-5 h-5 mr-2" />
+          Chat Assistant
         </Link>
       </div>
     </div>
@@ -44,6 +48,9 @@ function Layout({ children }: { children: React.ReactNode }) {
                 <Link to="/upload" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                   Upload
                 </Link>
+                <Link to="/chat" className="border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                  Chat Assistant
+                </Link>
               </div>
             </div>
           </div>
@@ -58,6 +65,7 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 import Search from './pages/Search';
 import Upload from './pages/Upload';
+import Chat from './pages/Chat';
 
 function App() {
   return (
@@ -67,6 +75,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/search" element={<Search />} />
           <Route path="/upload" element={<Upload />} />
+          <Route path="/chat" element={<Chat />} />
         </Routes>
       </Layout>
     </Router>
