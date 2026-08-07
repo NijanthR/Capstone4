@@ -14,8 +14,11 @@ def pdf_parsing_agent(state: AgentState) -> dict:
         
     doc = fitz.open(pdf_path)
     text = ""
-    for page in doc:
-        text += page.get_text()
+    try:
+        for page in doc:
+            text += page.get_text()
+    finally:
+        doc.close()
         
     # Chunking
     from langchain_text_splitters import RecursiveCharacterTextSplitter
