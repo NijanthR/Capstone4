@@ -6,12 +6,15 @@ os.environ["USE_TF"] = "0"
 
 # Patch requests to enforce a default timeout of 10s (prevents third-party libraries like arxiv from hanging indefinitely)
 import requests
-_original_request = requests.Session.request
-def _patched_request(self, method, url, *args, **kwargs):
-    if 'timeout' not in kwargs:
-        kwargs['timeout'] = 10.0
-    return _original_request(self, method, url, *args, **kwargs)
-requests.Session.request = _patched_request
+if not hasattr(requests.Session, "_patched"):
+    requests.Session._patched = True
+    _original_request = requests.Session.request
+    def _patched_request(self, method, url, *args, **kwargs):
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = 10.0
+        return _original_request(self, method, url, *args, **kwargs)
+    requests.Session.request = _patched_request
+
 
 
 import uvicorn
