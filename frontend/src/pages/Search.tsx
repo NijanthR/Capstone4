@@ -49,9 +49,10 @@ export default function Search() {
         title: paper.title
       });
       setSummary(response.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setError('Failed to download and process the selected paper.');
+      const errMsg = err.response?.data?.detail || err.message || 'Failed to download and process the selected paper.';
+      setError(errMsg);
     } finally {
       setProcessing(false);
     }
