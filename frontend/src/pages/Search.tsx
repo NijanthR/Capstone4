@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search as SearchIcon, FileText, ExternalLink, ArrowLeft, MessageSquare, CheckCircle } from 'lucide-react';
+import { Search as SearchIcon, FileText, ExternalLink, ArrowLeft, MessageSquare, CheckCircle, Loader } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,7 +9,6 @@ export default function Search() {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
   const [processing, setProcessing] = useState(false);
   const [processingTitle, setProcessingTitle] = useState('');
   const [summary, setSummary] = useState<any>(null);
@@ -17,13 +16,12 @@ export default function Search() {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setLoading(true);
     setError('');
     setSummary(null);
-    
+
     try {
-      // Use local FastAPI backend via env
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await axios.post(`${baseUrl}/api/search`, { query });
       setResults(response.data.search_results || []);
@@ -37,11 +35,11 @@ export default function Search() {
 
   const handleNext = async (paper: any) => {
     if (!paper.pdf_url) return;
-    
+
     setProcessing(true);
     setProcessingTitle(paper.title || 'Selected Paper');
     setError('');
-    
+
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
       const response = await axios.post(`${baseUrl}/api/select_paper`, {
@@ -50,15 +48,9 @@ export default function Search() {
       });
       const data = response.data;
       setSummary(data);
-      if (data.paper_id) {
-        localStorage.setItem('active_paper_id', data.paper_id);
-      }
-      if (data.extracted_title) {
-        localStorage.setItem('active_paper_title', data.extracted_title);
-      }
-      if (data.extracted_authors) {
-        localStorage.setItem('active_paper_authors', data.extracted_authors);
-      }
+      if (data.paper_id) localStorage.setItem('active_paper_id', data.paper_id);
+      if (data.extracted_title) localStorage.setItem('active_paper_title', data.extracted_title);
+      if (data.extracted_authors) localStorage.setItem('active_paper_authors', data.extracted_authors);
     } catch (err: any) {
       console.error(err);
       const errMsg = err.response?.data?.detail || err.message || 'Failed to download and process the selected paper.';
@@ -69,127 +61,178 @@ export default function Search() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-10">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8 flex items-center">
-        <SearchIcon className="mr-3 text-primary-600" />
-        Search Research Papers
-      </h1>
-      
-      {error && <div className="p-4 bg-red-50 text-red-600 rounded-lg mb-6">{error}</div>}
+    <div className="max-w-4xl mx-auto py-6">
+      {/* Page header */}
+      <div className="page-header">
+        <div className="page-header-icon">
+          <SearchIcon size={20} style={{ color: '#818cf8' }} />
+        </div>
+        <div>
+          <h1 className="page-title">Search Papers</h1>
+          <p style={{ fontSize: '0.82rem', color: '#475569', marginTop: 2 }}>
+            Powered by arXiv, Semantic Scholar &amp; web search
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="error-banner">
+          <FileText size={16} style={{ flexShrink: 0 }} />
+          {error}
+        </div>
+      )}
 
       {processing ? (
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm text-center py-20">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-600 mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Analyzing & Indexing Paper</h2>
-          <p className="text-gray-600 font-medium max-w-md mx-auto mb-4">"{processingTitle}"</p>
-          <p className="text-sm text-gray-500 max-w-sm mx-auto">We are downloading this PDF, splitting it into chunks, indexing it into the database for chat support, and generating a structured summary...</p>
+        <div className="processing-card">
+          <div className="spinner" />
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#e2e8f0', marginBottom: 8 }}>
+            Analyzing &amp; Indexing Paper
+          </h2>
+          <p style={{ fontSize: '0.9rem', color: '#818cf8', fontWeight: 600, marginBottom: 12 }}>
+            "{processingTitle}"
+          </p>
+          <p style={{ fontSize: '0.82rem', color: '#475569', maxWidth: 380, margin: '0 auto', lineHeight: 1.7 }}>
+            Downloading PDF, splitting into chunks, indexing for chat support, and generating a structured summary...
+          </p>
         </div>
       ) : summary ? (
-        <div className="space-y-8">
-          <div className="bg-green-50 border border-green-200 p-4 rounded-xl flex items-center text-green-700">
-            <CheckCircle className="w-6 h-6 mr-3 flex-shrink-0" />
-            <span className="font-semibold">Workflow Complete: "{processingTitle}" has been fully summarized and indexed!</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="success-banner">
+            <CheckCircle size={20} style={{ flexShrink: 0, color: '#34d399' }} />
+            <span>Workflow complete — <strong>"{processingTitle}"</strong> has been summarized and indexed for chat!</span>
           </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900">Structured Summary</h2>
-            <div className="prose max-w-none">
-              <pre className="whitespace-pre-wrap font-sans text-gray-700 leading-relaxed text-sm">
-                {summary.summary}
-              </pre>
-            </div>
+
+          <div className="summary-box">
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0', marginBottom: 16 }}>
+              Structured Summary
+            </h2>
+            <pre className="summary-text">{summary.summary}</pre>
           </div>
-          
-          <div className="flex gap-4">
-            <button 
+
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button
               onClick={() => setSummary(null)}
-              className="px-6 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg text-gray-800 font-medium transition flex items-center text-sm"
+              className="btn-secondary"
+              style={{ fontSize: '0.85rem' }}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Search
+              <ArrowLeft size={15} />
+              Back to Search
             </button>
-            <button 
+            <button
               onClick={() => navigate('/chat')}
-              className="ml-auto px-8 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition text-sm font-medium flex items-center"
+              className="btn-green"
+              style={{ marginLeft: 'auto', fontSize: '0.85rem' }}
             >
-              <MessageSquare className="w-4 h-4 mr-2" /> Start Chatting about this paper
+              <MessageSquare size={15} />
+              Start Chatting
             </button>
           </div>
         </div>
       ) : (
         <>
-          <form onSubmit={handleSearch} className="mb-10">
-            <div className="relative flex items-center">
+          {/* Search Form */}
+          <form onSubmit={handleSearch} style={{ marginBottom: '28px' }}>
+            <div className="search-input-wrap">
+              <SearchIcon size={18} className="search-icon-left" />
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={e => setQuery(e.target.value)}
                 placeholder="Enter research topic, keywords, or authors..."
-                className="w-full px-6 py-4 rounded-xl border border-gray-300 shadow-sm focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg outline-none"
+                className="search-input"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="absolute right-2 px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+                className="search-btn"
               >
-                {loading ? 'Searching...' : 'Search'}
+                {loading ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Loader size={13} style={{ animation: 'spin 0.8s linear infinite' }} />
+                    Searching...
+                  </span>
+                ) : 'Search'}
               </button>
             </div>
           </form>
-          
-          <div className="space-y-6">
+
+          {/* Results */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {loading ? (
               <>
-                <div className="text-center py-6 flex flex-col items-center justify-center text-gray-500">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600 mb-4"></div>
-                  <p className="text-base font-medium animate-pulse text-primary-700">Searching across arXiv, Semantic Scholar & DuckDuckGo...</p>
+                <div style={{
+                  textAlign: 'center', padding: '20px',
+                  color: '#6366f1', fontWeight: 600, fontSize: '0.9rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10
+                }}>
+                  <div style={{
+                    width: 18, height: 18, border: '2px solid rgba(99,102,241,0.3)',
+                    borderTopColor: '#6366f1', borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite'
+                  }} />
+                  Searching across arXiv, Semantic Scholar &amp; DuckDuckGo...
                 </div>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm animate-pulse">
-                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/4 mb-4"></div>
-                    <div className="space-y-2 mb-4">
-                      <div className="h-4 bg-gray-200 rounded w-full"></div>
-                      <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                    </div>
-                    <div className="h-8 bg-gray-200 rounded w-24"></div>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="paper-card" style={{ padding: '24px' }}>
+                    <div className="skeleton" style={{ height: 22, width: '75%', marginBottom: 12 }} />
+                    <div className="skeleton" style={{ height: 14, width: '30%', marginBottom: 16 }} />
+                    <div className="skeleton" style={{ height: 13, width: '100%', marginBottom: 6 }} />
+                    <div className="skeleton" style={{ height: 13, width: '85%', marginBottom: 16 }} />
+                    <div className="skeleton" style={{ height: 32, width: 100 }} />
                   </div>
                 ))}
               </>
             ) : (
               <>
                 {results.map((paper, idx) => (
-                  <div key={idx} className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">{paper.title}</h2>
-                    <p className="text-sm text-gray-500 mb-4">{paper.authors ? paper.authors.join(', ') : 'Unknown Authors'}{paper.published ? ` • ${new Date(paper.published).toLocaleDateString()}` : ''}</p>
-                    <p className="text-gray-700 text-sm line-clamp-3 mb-4">{paper.abstract}</p>
-                    
-                    <div className="flex gap-4 items-center">
+                  <div key={idx} className="paper-card">
+                    <h2 className="paper-title">{paper.title}</h2>
+                    <p className="paper-meta">
+                      {paper.authors ? paper.authors.join(', ') : 'Unknown Authors'}
+                      {paper.published ? ` • ${new Date(paper.published).toLocaleDateString()}` : ''}
+                    </p>
+                    <p className="paper-abstract">{paper.abstract}</p>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      {paper.source && (
+                        <span className="source-badge">{paper.source}</span>
+                      )}
                       {paper.pdf_url && (
-                        <a href={paper.pdf_url} target="_blank" rel="noreferrer" className="text-primary-600 hover:text-primary-800 text-sm font-medium flex items-center">
-                          <FileText className="w-4 h-4 mr-1" /> View PDF
+                        <a href={paper.pdf_url} target="_blank" rel="noreferrer" className="link-btn">
+                          <FileText size={13} />
+                          PDF
                         </a>
                       )}
                       {paper.entry_id && (
-                        <a href={`https://arxiv.org/abs/${paper.entry_id.split('/').pop()}`} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-700 text-sm font-medium flex items-center">
-                          <ExternalLink className="w-4 h-4 mr-1" /> arXiv Page
+                        <a
+                          href={`https://arxiv.org/abs/${paper.entry_id.split('/').pop()}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="link-btn"
+                        >
+                          <ExternalLink size={13} />
+                          arXiv
                         </a>
                       )}
-                      {paper.source && (
-                        <span className="text-gray-500 text-sm font-medium flex items-center">
-                          Source: {paper.source}
-                        </span>
+                      {paper.pdf_url && (
+                        <button
+                          onClick={() => handleNext(paper)}
+                          className="next-btn"
+                        >
+                          Analyze &amp; Index →
+                        </button>
                       )}
-                      <button 
-                        onClick={() => handleNext(paper)}
-                        className="ml-auto px-8 py-2 bg-white text-black border-2 border-black rounded-xl hover:bg-gray-100 transition text-sm font-medium"
-                      >
-                        next
-                      </button>
                     </div>
                   </div>
                 ))}
                 {results.length === 0 && (
-                  <div className="text-center text-gray-500 py-10">Enter a query to discover papers.</div>
+                  <div style={{
+                    textAlign: 'center', padding: '60px 20px',
+                    color: '#334155'
+                  }}>
+                    <SearchIcon size={40} style={{ margin: '0 auto 16px', opacity: 0.3 }} />
+                    <p style={{ fontWeight: 500 }}>Enter a query to discover papers</p>
+                  </div>
                 )}
               </>
             )}
