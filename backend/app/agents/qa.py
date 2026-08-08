@@ -25,10 +25,20 @@ def qa_agent(state: AgentState) -> dict:
         base_url=settings.BASE_URL
     )
     
+    paper_title = state.get("paper_title")
+    paper_authors = state.get("paper_authors")
+    
+    paper_info = ""
+    if paper_title:
+        paper_info += f"Active Research Paper Title: {paper_title}\n"
+    if paper_authors:
+        paper_info += f"Active Research Paper Authors: {paper_authors}\n"
+        
     prompt = f"""
     You are an AI Research Assistant. Use the following context retrieved from the user's research papers to answer the question.
     If the context does not contain the answer, you can also use your general knowledge, but clearly state what is from the paper vs general knowledge.
     
+    {paper_info}
     Context:
     {context}
     

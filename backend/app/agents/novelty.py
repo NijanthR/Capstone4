@@ -24,22 +24,24 @@ def novelty_check_agent(state: AgentState) -> dict:
         base_url=settings.BASE_URL
     )
     
-    # 1. Extract the title of the uploaded paper
-    title_prompt = f"""
-    Analyze the following research paper text and extract the exact title of the paper.
-    Return ONLY the title, with no extra labels, quotes, or punctuation.
-    
-    Paper Text (start):
-    {text[:2000]}
-    
-    Title:
-    """
-    try:
-        title_response = llm.invoke([HumanMessage(content=title_prompt)])
-        extracted_title = title_response.content.strip().replace('"', '').replace("'", "")
-    except Exception as e:
-        print(f"Error extracting title: {e}")
-        extracted_title = ""
+    # 1. Extract the title of the uploaded paper (or reuse if already extracted)
+    extracted_title = results.get("extracted_title")
+    if not extracted_title:
+        title_prompt = f"""
+        Analyze the following research paper text and extract the exact title of the paper.
+        Return ONLY the title, with no extra labels, quotes, or punctuation.
+        
+        Paper Text (start):
+        {text[:2000]}
+        
+        Title:
+        """
+        try:
+            title_response = llm.invoke([HumanMessage(content=title_prompt)])
+            extracted_title = title_response.content.strip().replace('"', '').replace("'", "")
+        except Exception as e:
+            print(f"Error extracting title: {e}")
+            extracted_title = ""
         
     # 2. Extract keywords for topic search query
     keyword_prompt = f"""

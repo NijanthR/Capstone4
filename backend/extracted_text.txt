@@ -1,0 +1,771 @@
+Robotic Perception in Agri-food Manipulation: A Review
+Jack Foster1, Mazvydas Gudelis2 Amir Ghalamzan E.3
+School of Computer Science,
+University of Lincoln, UK
+Abstract— To better optimise the global food supply chain,
+robotic solutions are needed to automate tasks currently com-
+pleted by humans. Namely, phenotyping, quality analysis and
+harvesting are all open problems in the ﬁeld of agricultural
+robotics. Robotic perception is a key challenge for autonomous
+solutions to such problems as scene understanding and object
+detection are vital prerequisites to any grasping tasks that a
+robot may undertake. This work conducts a brief review of
+modern robot perception models and discusses their efﬁcacy
+within the agri-food domain.
+I. INTRODUCTION
+The global food chain is under increasing stress due
+to pressures from a growing population, climate change,
+and socio-political factors [1]. Autonomous robotics are a
+key component of global food chain transformation. An
+important aspect of agri-food robotics is the application of
+dexterous manipulators to manage high value crop, reducing
+the need for skilled human workers. Robust computer vision
+pipelines are necessary to allow an agent to understand its
+environment, to identify and locate objects of interest and
+to complete the task it has been assigned.
+Some of the primary perception challenges are image
+classiﬁcation and segmentation, as well as object detection
+and tracking. Image classiﬁcation is simply the process of
+assigning a class label to an image (e.g. whether or not
+the image contains a banana or a strawberry) [2]. Object
+detection is distinct from classiﬁcation as, while each object
+may still be classiﬁed, its location within the image is
+also identiﬁed and given as output from the model [3].
+Object segmentation is similar to detection but creates a
+pixel-wise mask for the object instead of a bounding box
+representation. Object segmentation is traditionally divided
+into two sections: semantic and instance [4]. The aim of
+semantic segmentation is to anticipate labels for object
+classes like strawberry and leaf, while instance segmentation
+separates instances of the same type, for example, distin-
+guishing instances of all strawberry objects. The localization
+of such objects allows an autonomous robot to plan actions
+to manipulate the identiﬁed objects. Finally, object tracking
+is the problem of estimating the trajectory of an object within
+a scene [5].
+Image processing pipelines designed for such tasks must
+balance the need for high accuracy models with the require-
+1orcid.org/0000-0001-7718-4985
+2orcid.org/0000-0003-3101-1960
+3orcid.org/0000-0003-4589-0185
+ments found within the agricultural domain, such as the
+need to be executed in real-time, on robotic hardware in
+remote locations. In addition, models must also overcome
+issues concerning data availability and large perturbations in
+image features such as illumination, brightness, occlusions
+and object scale.
+II. EXISTING ARCHITECTURES
+While methods such as Hough transformations, random
+forests,
+support
+vector
+machines
+and
+Harr
+cascades
+have successfully been applied to computer vision tasks
+(including in the agricultural domain [6]), advancements in
+deep learning combined with the rapid growth of available
+processing power has led to the domain being dominated by
+Neural Networks (NN). Speciﬁcally, Convolutional Neural
+Networks (CNNs) are well suited to image processing tasks
+[7], as they leverage spatial information within the input
+vector. Furthermore, shared feature banks allow CNNs to
+be substantially deeper, without the exponential rise in
+connections [2], which facilitates the learning of more
+complex patterns.
+Given few computational constraints, the ResNet [8]
+and DenseNet [9] CNN architectures are rather ubiquitous
+in computer vision tasks, but recent work has proposed
+an
+upgrade
+to
+them.
+DSNet
+uses
+dense
+normalized
+shortcuts which mitigate the problem of ResNet’s tight
+feature capacity [10], while also retaining less parameters
+than DenseNet and avoiding its GPU memory issues
+(see table I). This allows the model to achieve comparable
+results with fewer layers (DSNet50 can match a ResNet152).
+Architecture
+Top-1(%)
+memory (MB)
+time (s)
+ResNet50
+24.01
+3929
+0.31
+ResNet152
+22.16
+7095
+0.63
+DenseNet264
+22.15
+9981
+0.60
+DSNet50
+22.49
+4777
+0.37
+DS2Net50
+22.03
+5133
+0.39
+TABLE I
+GPU MEMORY AND TRAINING TIME ON IMAGENET [10]; MEMORY
+INDICATES THAT PER GPU AND TIME INDICATES THAT PER ITERATION
+For object detection tasks, these models are often used
+as the backbone of R-CNN architectures, such as Faster
+R-CNN [11], which facilitate the identiﬁcation of multiple
+objects in a scene. While these models offer sophisticated
+ways of eliminating vanishing gradients in deep networks,
+arXiv:2208.10580v1  [cs.RO]  22 Aug 2022
+the size and complexity of these architectures often prove
+prohibitive to on-board real-time execution for high-speed
+agricultural robotics.
+The
+YOLO
+architectures
+are
+commonplace
+in
+agri-
+robotics due to their higher speed of execution, while
+maintaining comparable performance to the alternative
+models [12], [13]. For example, YOLOv3 is 100 times
+faster than Faster-RCNN. Furthermore, with the release of
+YOLOv4 [13], efﬁcient CNNs have achieved a ∼1.5 times
+higher average precision score while maintaining the same
+frame output availability under comparable computational
+constraints.
+III. LABELLED DATA AVAILABILITY
+With
+deep
+architectures
+outperforming
+traditional
+methods, the need for large, labelled datasets is increasingly
+important. While there is a growing number of agricultural
+datasets, there is a need to alleviate the reliance upon
+such datasets as the labelling process is long and tedious,
+and acquiring the data is often difﬁcult, expensive, or not
+possible at all.
+As labelling is often considered a bottleneck in deploying
+models in new domains, there has been research on
+simplifying the labelling process through reducing labels
+to bounding boxes [14] or image-level labels [15]. While
+bounding boxes may be effective for well deﬁned objects
+with clear structure (such as a brightly coloured fruit against
+a neutral backdrop), they are limited in their application
+to complex, noisy environments such as separating crop
+rows from weeds or grassland, whose boundaries are not
+well deﬁned. Introduced in [16], a semantic graphic is a
+graphical sketch whereby a complex object (e.g. a crop
+row) is represented in the form of a simpliﬁed ﬁgure (e.g.
+a straight green line), that is easier for the model to learn.
+The primary advantage of this approach is that it allows for
+the easy encoding of intuitive human knowledge. While this
+is effective, it is predicated on the na¨ıve assumption that
+the necessary agricultural data is abundant. Often acquiring
+the data will be non-trivial and so alternate methods are
+necessary to alleviate the data dependence.
+Another possible solution is to augment datasets through
+synthesising additional data-points. Since their release in
+2014, Generative Adversarial Networks (GAN) [17] have
+been seen as an appealing topic to many researchers due
+to their ability to be used as content creation tools. It
+has been widely demonstrated that GANs can be used to
+account for missing samples in data-sets of varying diversity.
+Diseases and pest infestations in agricultural crops are one
+of the major threats to plant quality. While the identiﬁcation
+of these deleterious features is commonly left to machine
+learning models [18], data scarcity often proves problematic
+when training deep networks, leading to misclassiﬁcation. It
+is shown by the authors of [19] that a Deep Convolutional
+Generative Adversarial Network (DCGAN) can be used to
+generate compellingly realistic plant leaf images (see ﬁgure
+1), which are fairly often able to deceive networks tasked
+with determining their legitimacy. Furthermore, an apple
+lesion dataset was augmented with images generated using a
+CycleGAN model [18], successfully increasing the available
+data-pool for the detection network to train on. While the
+CycleGAN is capable of generating novel data, it was trained
+on the initial dataset and thus any generated images are
+likely to be perturbations of the original data. While the
+additional samples can improve robustness to noise in the
+trained classiﬁer, it is unlikely to introduce new features that
+must be learned and extracted; as such, there is a requirement
+that the initial dataset sufﬁciently represents the features
+necessary for identifying the relevant objects. Zhang et al.
+[20] seek to alleviate such problems by introducing better
+GAN-based architectures that outperform current state-of-
+the-art in terms of traditional distribution quality metrics,
+such as the StyleGAN architecture used to generate novel
+images of cars, bedrooms, faces and birds [21]. While not
+yet applied to agriculture, future work could see such models
+applied to crop image data generation.
+Fig. 1.
+Fake leaf generation process [19]
+Unsupervised pretraining may also be used, whereby a
+network’s feature extractor layers are ﬁrst trained on a large,
+unlabelled dataset, before their weights are frozen and the
+later layers can be trained on a smaller, domain-speciﬁc
+labelled dataset to ﬁne-tune the network’s performance.
+As unlabelled data does not have ground-truth labels to
+calculate model loss, alternative strategies must be utilised
+to train models.
+Autoencoders
+play
+a
+fundamental
+role
+in
+many
+unsupervised
+learning
+architectures
+[22].
+They
+consist
+of an encoder which compresses an input vector into a
+lower-dimensional latent representation, before a decoder
+attempts to reconstruct this latent representation back into
+the original input vector. This allows the network to be
+trained using the input as ground truth to the output,
+allowing the encoder network to learn to encode important
+information from the input vector, thus resulting in a feature
+extractor that has been pretrained on an unlabelled dataset.
+Applications in agricultural aerial imaging have leveraged
+autoencoder architectures to improve robustness in iron de-
+ﬁciency chlorosis prediction in soybeans [23], a problem
+which can lead to substantially reduced yield. Work has
+also been conducted in utilising convolutional autoencoders
+to reduce training parameters in a CNN-based plant disease
+detection architecture [24].
+Fig. 2.
+MoCo Architecture [25]. The left network becomes the ﬁnal
+classiﬁer network. The right network is the dictionary network, used to
+facilitate the unsupervised learning methodology.
+Alternative strategies frame unsupervised learning as a
+dictionary look-up problem [26], whereby one network
+encodes a stack of images into lower-dimensional latent
+representations (keys to the dictionary) and the primary
+network must then match a heavily augmented image
+(dictionary query) to its corresponding lower-dimensional
+representation.
+These
+approaches
+are
+being
+improved
+regularly, such as the use of momentum contrast learning
+to facilitate larger dictionary sizes while still allowing the
+matching of queries to up-to-date representations [25].
+Unsupervised training is a desirable approach because it
+alleviates the pressure of acquiring and labelling problem
+speciﬁc data, but also because it can lead to improved ro-
+bustness in models [23]. This is especially true if the labelled
+dataset is imbalanced, as the generic feature extractor will not
+be conditioned on this imbalanced data. Dictionary lookup
+approaches have not yet seen widespread application in the
+agricultural domain but, like other unsupervised models,
+present a promising approach to developing robust object
+detection or classiﬁcation models that can be used to aid
+robotic manipulation and grasping. Further work is needed to
+compare their efﬁcacy against other unsupervised paradigms
+within the agri-foods domain.
+IV. AGRICULTURAL CHALLENGES
+Within an agricultural environment, perception can be used
+to solve many challenges including: phenotyping, quality
+analysis, and harvestability [1].
+A. Phenotyping
+Image-based plant phenotyping is concerned with the
+effects of the genotype and environment of a plant on its
+phenotype (i.e. its behaviour and characteristics) [27]. In
+doing so, plant phenotyping plays a crucial role in selecting
+desirable traits, and designing new crops, such as ones
+that are resistant to environmental perturbations due to
+climate change [28]. The development of robust computer
+vision models is vital to creating a widespread, autonomous
+platform for plant phenotyping capable of analysing large
+scale
+plant
+imaging
+data.
+Common
+challenges
+within
+phenotyping include the counting of crop leaves [29], [30],
+the building of 3D crop models [31], and stem analysis
+[32].
+Leaf counting tasks is perhaps the most commonly
+addressed
+problem
+within
+phenotyping.
+Leaf
+counting
+can serve as an important indicator as to the health or
+growth stage of a crop, and when combined with robotic
+manipulation, can facilitate autonomous purging of non-
+desirable plants. Buzzy et al. [29] discuss the need for
+on-board, real-time prediction when running on a mobile
+robot capable of manoeuvring through the environment
+autonomously. To accomplish this the YOLOv3 architecture
+is used, leveraging an Android phone’s integrated camera
+as image input. Pound et al. [33] further push the link to
+robotic manipulation with a multi-task model that, trained
+on a dataset of annotated wheat images, jointly predicts the
+presence of a speciﬁc phenotype, as well as the location
+of such features. The localisation could be leveraged to
+facilitate the grasping of desirable crop.
+Fig. 3.
+Leaf Detection and Bounding Box Segmentation [29]
+3D plant models can further provide detailed measure-
+ments of plant phenomics, and can form a symbiotic re-
+lationship with robotic manipulation. As seen in the pa-
+per by Santos et al. [34], dense 3D point clouds may be
+constructed by moving a camera around a plant, providing
+detailed models that can be resistant to occlusions. While
+[34] required a human operator to move the camera, it could
+instead be placed towards the end effector of a robot arm;
+allowing the robot to automate the model generation. Once
+the models are constructed, they may be used to improve the
+accuracy of grasp prediction and planning. 3D models have
+been used to classify draught-induced stress in plant canopies
+[31]. As plant canopys are often self-occluding and very
+similar, 2D models are often insufﬁcient to accurately predict
+the draught-induced stress placed upon them. To achieve
+accurate predictions, a vision pipeline of 3D reconstruction,
+segmentation and feature extraction is used, leveraging deep
+networks at various stages of the process. While 3D models
+may yield better results, processing them is often more
+computationally expensive than their 2D counterparts, a trait
+that may prove problematic for real-time processing on-board
+high speed agricultural robotic systems.
+B. Quality Analysis
+The quality of a crop is of upmost importance when
+monitoring and maintaining produce. Quality analysis, often
+done by trained specialists, is the process of ensuring a crop
+meets a certain standard by auditing for deleterious features
+such as pests or disease [35]. Tedious and time consuming,
+automating this process has long been of interest within the
+agriculture sector.
+Computer vision is a vital component to automating
+quality analysis, as visual aberrations are common indicators
+that a plant does not meet the required standards. As with
+other agricultural problems, deep convolutional models once
+again outperform alternative methods. The authors of [36]
+propose a portable hyper-spectral imaging system to detect
+Verticillium in strawberries, which is able to operate in
+real-time. In the previous case, a Faster R-CNN with a
+ResNet50 backbone, utilizing multi-task learning and an
+attention mechanism is able to detect the disease in a
+data-set of 3,531 images (56% training set, 14% validation
+set, and 30% testing set) with an accuracy of 99.95% on
+the 1,060 image test set. Similarly, Liu and Wang [35]
+detects the presence of disease and pests on tomato plants.
+Using a YOLOv3 architecture, augmented with multi-scale
+feature detection based on image pyramid, the work achieves
+92.39% detection accuracy with an average detection time of
+20.39ms. It should be noted, however, that the experimental
+setup leveraged the high speed Nvidia gtx 1080ti GPU, not
+typically found in lightweight robotic systems.
+C. Harvestability
+Utilising automation to solve harvesting tasks for high
+value crop is undoubtedly one of the main interests to
+farmers. Produce harvesting is hard to automate as it is
+multi-faceted, and thus well suited to human cognition.
+Harvesting requires produce to be identiﬁed, localised and
+tracked and have its harvestability predicted, before ﬁnally
+being grasped for harvest. If machines are employed, op-
+erators must execute harvesting commands with reference
+to the crop remaining, and must navigate the appliances in
+an optimized way to account for all produce that can be
+harvested. Zhang et al. [37] focus on fruit tracking, exploiting
+a Faster R-CNN to detect apples and their branches with
+an accuracy of 82%. The network also estimates shaking
+locations to determine which apples are certain to fall off
+once the tree is shook. As discussed in section IV-B, Nie et
+al. [36] propose a portable hyper-spectral imaging system
+through the utilisation of AlexNet [7], which is able to
+operate in real-time when classifying strawberry maturity
+stages and achieves a classiﬁcation accuracy of 98.6%, albeit
+on a rather small data-set consisting of only 240 images.
+Other works have integrated similar vision systems with
+robotic manipulators. For example, Bac et al. [38] ﬁrst
+segment sweet-pepper plants from their background, before
+classifying vegetation into hard (stem, fruit) and soft (leaf,
+petiole) obstacles. These predictions not only allowed the
+sweet-pepper to be identiﬁed, but also for a collision-free
+path to be planned, such that a robotic manipulator may
+harvest the fruit.
+V. FOOD INDUSTRY CHALLENGES
+In addition to the agricultural domain, robotics can also
+be applied to a range of problems within the food industry,
+classiﬁed into 3 problem domains: pick and place, packing,
+and serving [39].
+A. Pick and Place
+Pick and place tasks are often integrated into the other
+problem domains. For example, packing requires the picking
+up of an object from their starting position, and placing
+them into their packaging. Pick and place tasks are inter-
+twined with the perception capabilities of the robot [40],
+as classical solutions to pick and place tasks require either
+object segmentation, or object recognition and pose esti-
+mation prior to model-based grasp planning [41]. Modern,
+data-driven approaches use convolutional neural networks to
+provide bounding boxes or segmentations, followed by pose
+estimation which can guide the subsequent picking up of
+the object [42], [43]. As a clear visual representation of the
+object is necessary for grasping and manipulation in other
+domains too, solutions may already exist to further improve
+the performance of food industry pick and place methods.
+For example, Li et al. [44] propose an updated U-Net [45]
+architecture with a residual unit to predict the graspable
+parts of unknown objects by taking into account the size
+of the graspable part of the object and the robot’s gripper,
+facilitating the manipulation of a wider range of objects, thus
+resulting in more robust grasping solutions.
+B. Packing
+In packing problems, robotic solutions have been largely
+standardised, with decision making being subject to payload
+speciﬁcations [39]. The continued development of complex
+pick and place grasping methodologies presents new op-
+portunities for packing robots to undertake more nuanced
+challenges, such as sorting in cluttered environments where
+the objects are prone to occlusions; in such environments,
+robust perception architectures are necessary to accurately
+conduct object segmentation and pose estimation. Zeng et
+al. [43] leveraged a deep CNN to estimate the 6D pose of
+objects present in the Amazon Picking Challenge. In this
+challenge, robots must pick and place objects in challenging
+scenarios. Primarily, the solutions must overcome: cluttered
+environments where there are many objects in the scene, self-
+occlusions due to limited camera positions, missing data due
+to imperfect commercial-grade sensor equipment, and the
+challenges around grasping small or deformable objects. This
+work was proposed as a solution for warehouse robotics, an
+area closely aligned with the packing of food goods, and thus
+there is scope to apply such approaches to problems within
+the agri-food domain.
+C. Serving
+Serving robotics are amongst the newest of agri-food
+robotics; the domain is challenging as it requires resistance
+to unexpected perturbations in the environment as the
+robot systems are human user-facing. Serving robotics are
+desirable as they reduce customer wait time, reduce the
+cost of labour, and may be more precise - reducing the
+number of accidents and incidents such as dropping plates
+or drinks [46]. However, many current implementations
+rely upon line following techniques, paired with IR, or
+LIDAR to facilitate collision avoidance [46]–[48]. While
+these systems are fairly robust and, due to the constraints of
+the system, are able to operate within human environments,
+the development of free-moving, vision-guided robotic
+solutions could allow for more dynamic behaviour that
+allows robots to undertake more responsibility and operate
+with less constraints. Human aware navigation systems
+exist [49], mostly leveraging robust navigation strategies
+such as minimum required obstacle distance or stop-and-
+wait strategies. While human aware navigation has seen
+application in domains such as assistive living [50], [51],
+they have not yet been widely applied to the food industry.
+The development of robots for cooking is still in its
+infancy. This environment is challenging as it requires the
+high-speed and dexterous manipulation of a wide range
+of objects, from soft and deformable food items to knives
+and other dangerous cooking equipment. In other domains,
+robots
+must
+also
+operate
+in
+fast
+paced
+environments
+such as using conveyor belts or other sequential process
+dependant systems. In such cases systems tasked with
+object representation must provide reliable real-time data
+to enable the robot to physically engage with objects in its
+environment. For example, Kasaei et al. [52] present a global
+object descriptor that allows concurrent object identiﬁcation
+and
+pose
+estimation
+while
+balancing
+descriptiveness,
+computation time, and memory use. There is a need to
+extend such solutions to the domain of cooking robots
+to achieve deployable solutions to consumer-facing food
+places.
+VI. DISCUSSION
+Robotic perception strategies within the agri-foods domain
+have been shown to successfully solve complex challenges
+that would otherwise require a human worker to complete.
+Solving such challenges is necessary to facilitate autonomous
+robotic manipulation, and to further reduce the burden placed
+on human experts by the growing agricultural industry. There
+are many challenges that remain unsolved, such as access
+to labelled data, the trade-off between accuracy and speed
+of execution, and the need to further reﬁne and optimise
+existing solutions to create robust, autonomous and deploy-
+able systems. While these problems remain prevalent, there
+are many methods and models within the ﬁeld of computer
+vision that have yet to be applied to agricultural problems;
+novel solutions may be necessary for some challenges, but
+looking to other domains may provide answers without the
+need to reinvent the wheel. As technology advances, novel
+methods are released and often offer higher certainty, which
+may also reinvent the reasoning by which computer vision
+systems operate. It is still difﬁcult to achieve full autonomy
+within the agri-food manipulation domain. Current works
+in perception primarily solve isolated challenges, and while
+these may be solved effectively, there are few solutions
+that prove sufﬁciently robust and generalisable; such that
+they may be deployed in real environments to alleviate the
+growing pressures placed upon the food supply chain.
+REFERENCES
+[1] T.
+Duckett,
+S.
+Pearson,
+S.
+Blackmore,
+and
+B.
+Grieve,
+“Agricultural
+robotics:
+The
+future
+of
+robotic
+agriculture,”
+CoRR,
+vol.
+abs/1806.06762,
+2018.
+[Online].
+Available:
+http:
+//arxiv.org/abs/1806.06762
+[2] Y. LeCun, Y. Bengio, and G. Hinton, “Deep learning,” nature, vol.
+521, no. 7553, pp. 436–444, 2015.
+[3] C. Szegedy, A. Toshev, and D. Erhan, “Deep neural networks for object
+detection,” 2013.
+[4] S. Minaee, Y. Y. Boykov, F. Porikli, A. J. Plaza, N. Kehtarnavaz, and
+D. Terzopoulos, “Image segmentation using deep learning: A survey,”
+IEEE Transactions on Pattern Analysis and Machine Intelligence, pp.
+1–1, 2021.
+[5] A. Yilmaz, O. Javed, and M. Shah, “Object tracking: A survey,” Acm
+computing surveys (CSUR), vol. 38, no. 4, pp. 13–es, 2006.
+[6] C. Marzan and N. Marcos, “Towards tobacco leaf detection using haar
+cascade classiﬁer and image processing techniques,” 10 2018, pp. 63–
+68.
+[7] A. Krizhevsky, I. Sutskever, and G. E. Hinton, “Imagenet classiﬁcation
+with deep convolutional neural networks,” in Advances in neural
+information processing systems, 2012, pp. 1097–1105.
+[8] K. He, X. Zhang, S. Ren, and J. Sun, “Deep residual learning
+for image recognition,” CoRR, vol. abs/1512.03385, 2015. [Online].
+Available: http://arxiv.org/abs/1512.03385
+[9] G. Huang and Z. L. andF Kilian Q. Weinberger, “Densely connected
+convolutional networks,” CoRR, vol. abs/1608.06993, 2016. [Online].
+Available: http://arxiv.org/abs/1608.06993
+[10] C. Zhang, P. Benz, D. M. Argaw, S. Lee, J. Kim, F. Rameau,
+J.-C. Bazin, and I. S. Kweon, “Resnet or densenet? introducing
+dense shortcuts to resnet,” in Proceedings of the IEEE/CVF Winter
+Conference on Applications of Computer Vision, 2021, pp. 3550–3559.
+[11] S. Ren, K. He, R. Girshick, and J. Sun, “Faster r-cnn: Towards real-
+time object detection with region proposal networks,” arXiv preprint
+arXiv:1506.01497, 2015.
+[12] J. Redmon and A. Farhadi, “Yolov3: An incremental improvement,”
+2018.
+[13] A. Bochkovskiy, C.-Y. Wang, and H.-Y. M. Liao, “Yolov4: Optimal
+speed and accuracy of object detection,” 2020.
+[14] G. Papandreou, L.-C. Chen, K. P. Murphy, and A. L. Yuille, “Weakly-
+and semi-supervised learning of a deep convolutional network for se-
+mantic image segmentation,” in Proceedings of the IEEE international
+conference on computer vision, 2015, pp. 1742–1750.
+[15] P. Pinheiro and R. Collobert, “Recurrent convolutional neural networks
+for scene labeling,” in International conference on machine learning.
+PMLR, 2014, pp. 82–90.
+[16] S. P. Adhikari, H. Yang, and H. Kim, “Learning semantic graphics
+using
+convolutional
+encoder–decoder
+network
+for
+autonomous
+weeding in paddy,” Frontiers in Plant Science, vol. 10, p. 1404,
+2019. [Online]. Available: https://www.frontiersin.org/article/10.3389/
+fpls.2019.01404
+[17] I. J. Goodfellow, J. Pouget-Abadie, M. Mirza, B. Xu, D. Warde-
+Farley, S. Ozair, A. Courville, and Y. Bengio, “Generative adversarial
+networks,” arXiv preprint arXiv:1406.2661, 2014.
+[18] Y. Tian, G. Yang, Z. Wang, E. Li, and Z. Liang, “Detection of apple
+lesions in orchards based on deep learning methods of cyclegan and
+yolov3-dense,” Journal of Sensors, vol. 2019, 2019.
+[19] A. Radford, L. Metz, and S. Chintala, “Unsupervised representation
+learning with deep convolutional generative adversarial networks,”
+arXiv preprint arXiv:1511.06434, 2015.
+[20] Y. Zhang, H. Ling, J. Gao, K. Yin, J.-F. Laﬂeche, A. Barriuso,
+A. Torralba, and S. Fidler, “Datasetgan: Efﬁcient labeled data factory
+with minimal human effort,” arXiv preprint arXiv:2104.06490, 2021.
+[21] T. Karras, S. Laine, and T. Aila, “A style-based generator architecture
+for generative adversarial networks,” in Proceedings of the IEEE/CVF
+Conference on Computer Vision and Pattern Recognition, 2019, pp.
+4401–4410.
+[22] P. Baldi, “Autoencoders, unsupervised learning, and deep architec-
+tures,” in Proceedings of ICML workshop on unsupervised and transfer
+learning.
+JMLR Workshop and Conference Proceedings, 2012, pp.
+37–49.
+[23] J. Li, C. Oswald, G. L. Graef, and Y. Shi, “Improving model robustness
+for soybean iron deﬁciency chlorosis rating by unsupervised pre-
+training on unmanned aircraft system derived images,” Computers
+and
+Electronics
+in
+Agriculture,
+vol.
+175,
+p.
+105557,
+2020.
+[Online]. Available: https://www.sciencedirect.com/science/article/pii/
+S016816992030483X
+[24] P. Bedi and P. Gole, “Plant disease detection using hybrid model based
+on convolutional autoencoder and convolutional neural network,”
+Artiﬁcial Intelligence in Agriculture, 2021.
+[25] K. He, H. Fan, Y. Wu, S. Xie, and R. Girshick, “Momentum contrast
+for unsupervised visual representation learning,” in Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern Recognition,
+2020, pp. 9729–9738.
+[26] K. Chatﬁeld, V. S. Lempitsky, A. Vedaldi, and A. Zisserman, “The
+devil is in the details: an evaluation of recent feature encoding
+methods.” in BMVC, vol. 2, no. 4, 2011, p. 8.
+[27] H. Scharr, T. P. Pridmore, and S. A. Tsaftaris, “Editorial: Computer
+vision problems in plant phenotyping, cvppp 2017 – introduction
+to the cvppp 2017 workshop papers,” in Proceedings of the IEEE
+International Conference on Computer Vision (ICCV) Workshops, Oct
+2017.
+[28] J.
+M.
+Costa,
+J.
+Marques
+da
+Silva,
+C.
+Pinheiro,
+M.
+Bar´on,
+P. Mylona, M. Centritto, M. Haworth, F. Loreto, B. Uzilday,
+I. Turkan, and M. M. Oliveira, “Opportunities and limitations
+of crop phenotyping in southern european countries,” Frontiers
+in Plant Science, vol. 10, p. 1125, 2019. [Online]. Available:
+https://www.frontiersin.org/article/10.3389/fpls.2019.01125
+[29] M. Buzzy, V. Thesma, M. Davoodi, and J. Mohammadpour Velni,
+“Real-time plant leaf counting using deep object detection networks,”
+Sensors, vol. 20, no. 23, p. 6896, 2020.
+[30] E. Prasetyo, R. D. Adityo, N. Suciati, and C. Fatichah, “Mango
+leaf image segmentation on hsv and ycbcr color spaces using otsu
+thresholding,” in 2017 3rd International Conference on Science and
+Technology-Computer (ICST).
+IEEE, 2017, pp. 99–103.
+[31] S. Srivastava, S. Bhugra, B. Lall, and S. Chaudhury, “Drought stress
+classiﬁcation using 3d plant models,” in Proceedings of the IEEE
+International Conference on Computer Vision (ICCV) Workshops, Oct
+2017.
+[32] S. Das Choudhury, S. Goswami, S. Bashyam, A. Samal, and T. Awada,
+“Automated stem angle determination for temporal plant phenotyping
+analysis,” in Proceedings of the IEEE International Conference on
+Computer Vision (ICCV) Workshops, Oct 2017.
+[33] M. P. Pound, J. A. Atkinson, D. M. Wells, T. P. Pridmore, and
+A. P. French, “Deep learning for multi-task plant phenotyping,” in
+Proceedings of the IEEE International Conference on Computer Vision
+(ICCV) Workshops, Oct 2017.
+[34] T. T. Santos, L. V. Koenigkan, J. G. A. Barbedo, and G. C. Rodrigues,
+“3d plant modeling: Localization, mapping and segmentation for plant
+phenotyping using a single hand-held camera,” in Computer Vision -
+ECCV 2014 Workshops, L. Agapito, M. M. Bronstein, and C. Rother,
+Eds.
+Cham: Springer International Publishing, 2015, pp. 247–263.
+[35] J. Liu and X. Wang, “Tomato diseases and pests detection based
+on improved yolo v3 convolutional neural network,” Frontiers
+in Plant Science, vol. 11, p. 898, 2020. [Online]. Available:
+https://www.frontiersin.org/article/10.3389/fpls.2020.00898
+[36] X. Nie, L. Wang, H. Ding, and M. Xu, “Strawberry verticillium wilt
+detection network based on multi-task learning and attention,” IEEE
+Access, vol. 7, pp. 170 003–170 011, 2019.
+[37] J. Zhang, M. Karkee, Q. Zhang, X. Zhang, M. Yaqoob, L. Fu,
+and S. Wang, “Multi-class object detection using faster r-cnn and
+estimation of shaking locations for automated shake-and-catch apple
+harvesting,” Computers and Electronics in Agriculture, vol. 173,
+p. 105384, 2020. [Online]. Available: https://www.sciencedirect.com/
+science/article/pii/S0168169919327073
+[38] C. Bac, J. Hemming, and E. van Henten, “Robust pixel-based
+classiﬁcation of obstacles for robotic harvesting of sweet-pepper,”
+Computers and Electronics in Agriculture, vol. 96, pp. 148–162, 2013.
+[Online]. Available: https://www.sciencedirect.com/science/article/pii/
+S0168169913001099
+[39] J. Iqbal, Z. H. Khan, and A. Khalid, “Prospects of robotics in food
+industry,” Food Science and Technology (Campinas), vol. 37, pp. 159–
+165, 04 2017.
+[40] S. H. Kasaei, M. Oliveira, G. H. Lim, L. S. Lopes, and A. M. Tom´e,
+“Towards lifelong assistive robotics: A tight coupling between object
+perception and manipulation,” Neurocomputing, vol. 291, pp. 151–166,
+2018.
+[41] A. Zeng, S. Song, K.-T. Yu, E. Donlon, F. R. Hogan, M. Bauza,
+D. Ma, O. Taylor, M. Liu, E. Romo, N. Fazeli, F. Alet, N. C. Daﬂe,
+R. Holladay, I. Morena, P. Qu Nair, D. Green, I. Taylor, W. Liu,
+T. Funkhouser, and A. Rodriguez, “Robotic pick-and-place of novel
+objects in clutter with multi-affordance grasping and cross-domain
+image matching,” in 2018 IEEE International Conference on Robotics
+and Automation (ICRA), 2018, pp. 3750–3757.
+[42] M. Schwarz, A. Milan, C. Lenz, A. Mu˜noz, A. S. Periyasamy,
+M. Schreiber, S. Sch¨uller, and S. Behnke, “Nimbro picking: Versatile
+part handling for warehouse automation,” in 2017 IEEE International
+Conference on Robotics and Automation (ICRA), 2017, pp. 3032–
+3039.
+[43] A. Zeng, K.-T. Yu, S. Song, D. Suo, E. W. J. au2, A. Rodriguez,
+and J. Xiao, “Multi-view self-supervised deep learning for 6d pose
+estimation in the amazon picking challenge,” 2017.
+[44] Y. Li, L. Schomaker, and S. H. Kasaei, “Learning to grasp 3d
+objects using deep residual u-nets,” in 2020 29th IEEE International
+Conference on Robot and Human Interactive Communication (RO-
+MAN), 2020, pp. 781–787.
+[45] O. Ronneberger, P. Fischer, and T. Brox, “U-net: Convolutional
+networks for biomedical image segmentation,” in International Confer-
+ence on Medical image computing and computer-assisted intervention.
+Springer, 2015, pp. 234–241.
+[46] N. Malik, N. Rani, P. A. Singh, and S. Pragya, “Review paper on-
+serving robot new generation electronic waiter,” IJIRST–International
+Journal for Innovative Research in Science & Technology, vol. 2,
+no. 11, pp. 775–777, 2016.
+[47] A. Hamid, S. Hamdany, L. Albak, R. Raﬁ, and R. Al-Nima, “Wireless
+waiter robot,” 12 2019.
+[48] M. Asif, M. Sabeel, and K. Mujeeb-ur Rahman, “Waiter robot-solution
+to restaurant automation,” in Proceedings of the 1st student multi
+disciplinary research conference (MDSRC), At Wah, Pakistan, 2015,
+pp. 14–15.
+[49] T. Kruse, A. K. Pandey, R. Alami, and A. Kirsch, “Human-aware robot
+navigation: A survey,” Robotics and Autonomous Systems, vol. 61,
+no. 12, pp. 1726–1743, 2013.
+[50] D. Vasquez, P. Stein, J. Rios-Martinez, A. Escobedo, A. Spalanzani,
+and C. Laugier, “Human aware navigation for assistive robotics,” in
+Experimental Robotics.
+Springer, 2013, pp. 449–462.
+[51] J. Rios-Martinez, A. Escobedo, A. Spalanzani, and C. Laugier, “Inten-
+tion driven human aware navigation for assisted mobility,” in Workshop
+on Assistance and Service robotics in a human environment at IROS,
+2012.
+[52] S. H. Kasaei, A. M. Tom´e, L. S. Lopes, and M. Oliveira, “Good:
+A global orthographic object descriptor for 3d object recognition
+and manipulation,” Pattern Recognition Letters, vol. 83, pp. 312–320,
+2016.

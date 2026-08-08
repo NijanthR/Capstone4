@@ -48,7 +48,17 @@ export default function Search() {
         pdf_url: paper.pdf_url,
         title: paper.title
       });
-      setSummary(response.data);
+      const data = response.data;
+      setSummary(data);
+      if (data.paper_id) {
+        localStorage.setItem('active_paper_id', data.paper_id);
+      }
+      if (data.extracted_title) {
+        localStorage.setItem('active_paper_title', data.extracted_title);
+      }
+      if (data.extracted_authors) {
+        localStorage.setItem('active_paper_authors', data.extracted_authors);
+      }
     } catch (err: any) {
       console.error(err);
       const errMsg = err.response?.data?.detail || err.message || 'Failed to download and process the selected paper.';

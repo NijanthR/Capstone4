@@ -30,7 +30,55 @@ def pdf_parsing_agent(state: AgentState) -> dict:
     # Add to ChromaDB
     rag_service.add_documents(docs)
     
-    return {"results": {"pdf_text": text}}
+    # Extract title and authors
+    extracted_title = ""
+    extracted_authors = ""
+    if settings.API_KEY:
+        try:
+            llm = ChatOpenAI(
+                model="nova-micro",
+                api_key=settings.API_KEY,
+                base_url=settings.BASE_URL
+            )
+            metadata_prompt = f"""
+            Analyze the following research paper text and extract:
+            1. The exact title of the paper.
+            2. The authors of the paper (as a single clean string of names separated by commas).
+            
+            Return ONLY a valid JSON object with the keys "title" and "authors". Do not include any markdown formatting like ```json or ```.
+            
+            Paper Text (start):
+            {text[:2000]}
+            """
+            response = llm.invoke([HumanMessage(content=metadata_prompt)])
+            content = response.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            elif content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
+            try:
+                import json
+                meta = json.loads(content)
+                extracted_title = meta.get("title", "").strip().replace('"', '').replace("'", "")
+                extracted_authors = meta.get("authors", "").strip()
+                if isinstance(extracted_authors, list):
+                    extracted_authors = ", ".join(extracted_authors)
+            except Exception as json_err:
+                print(f"JSON parsing error for metadata: {json_err}")
+                extracted_title = content
+                extracted_authors = ""
+        except Exception as e:
+            print(f"Error extracting metadata in parser: {e}")
+            
+    return {"results": {
+        "pdf_text": text, 
+        "extracted_title": extracted_title, 
+        "extracted_authors": extracted_authors
+    }}
 
 def summarization_agent(state: AgentState) -> dict:
     """Generates structured summary from parsed PDF."""
@@ -68,4 +116,6 @@ def summarization_agent(state: AgentState) -> dict:
     
     response = llm.invoke([HumanMessage(content=prompt)])
     
-    return {"results": {"summary": response.content}}
+    current_results = state.get("results", {}) or {}
+    current_results["summary"] = response.content
+    return {"results": current_results}

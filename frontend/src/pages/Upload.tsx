@@ -27,7 +27,17 @@ export default function Upload() {
       const response = await axios.post(`${baseUrl}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setResults(response.data);
+      const data = response.data;
+      setResults(data);
+      if (data.paper_id) {
+        localStorage.setItem('active_paper_id', data.paper_id);
+      }
+      if (data.extracted_title) {
+        localStorage.setItem('active_paper_title', data.extracted_title);
+      }
+      if (data.extracted_authors) {
+        localStorage.setItem('active_paper_authors', data.extracted_authors);
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to process paper. Ensure the backend is running and Gemini API key is configured.');

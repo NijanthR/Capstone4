@@ -13,6 +13,9 @@ class SearchRequest(BaseModel):
 
 class QARequest(BaseModel):
     query: str
+    paper_id: str | None = None
+    paper_title: str | None = None
+    paper_authors: str | None = None
 
 @router.post("/search")
 def search_papers(request: SearchRequest):
@@ -38,9 +41,13 @@ def upload_paper(
     is_own_research: bool = Form(False)
 ):
     try:
-        # Save file temporarily
+        # Save file temporarily with a unique name to prevent collisions
+        import uuid
         os.makedirs("temp_uploads", exist_ok=True)
-        file_path = f"temp_uploads/{file.filename}"
+        ext = os.path.splitext(file.filename)[1] or ".pdf"
+        unique_filename = f"{uuid.uuid4().hex}{ext}"
+        file_path = f"temp_uploads/{unique_filename}"
+        
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
@@ -64,7 +71,13 @@ def upload_paper(
         if os.path.exists(file_path):
             os.remove(file_path)
             
-        return final_state["results"]
+        results = final_state.get("results", {}) or {}
+        results["paper_id"] = file_path
+        if not results.get("extracted_title"):
+            results["extracted_title"] = os.path.splitext(file.filename)[0]
+        if not results.get("extracted_authors"):
+            results["extracted_authors"] = ""
+        return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -80,9 +93,10 @@ async def select_paper(request: SelectPaperRequest):
         # 1. Download PDF
         import httpx
         os.makedirs("temp_uploads", exist_ok=True)
-        # Generate safe filename from url or title
+        # Generate safe filename from url or title, appending a UUID to ensure uniqueness
+        import uuid
         safe_title = "".join(x for x in (request.title or "paper") if x.isalnum() or x in " -_")
-        file_path = f"temp_uploads/{safe_title[:50]}.pdf"
+        file_path = f"temp_uploads/{safe_title[:40]}_{uuid.uuid4().hex[:8]}.pdf"
         
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
@@ -138,7 +152,13 @@ async def select_paper(request: SelectPaperRequest):
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
             
-        return final_state["results"]
+        results = final_state.get("results", {}) or {}
+        results["paper_id"] = file_path
+        if not results.get("extracted_title"):
+            results["extracted_title"] = request.title or "Selected Paper"
+        if not results.get("extracted_authors"):
+            results["extracted_authors"] = ""
+        return results
     except Exception as e:
         traceback.print_exc()
         if file_path and os.path.exists(file_path):
@@ -154,11 +174,15 @@ def ask_question(request: QARequest):
         # QA runs isolated for follow-ups
         from app.agents.qa import qa_agent
         
+        pdf_path = request.paper_id or active_pdf_path
+        
         state = {
             "messages": [],
             "intent": "qa",
             "query": request.query,
-            "pdf_path": active_pdf_path,
+            "pdf_path": pdf_path,
+            "paper_title": request.paper_title,
+            "paper_authors": request.paper_authors,
             "is_own_research": False,
             "results": {}
         }

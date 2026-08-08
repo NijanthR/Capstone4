@@ -22,11 +22,41 @@ export default function Chat() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
+  const [activeTitle, setActiveTitle] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    const title = localStorage.getItem('active_paper_title');
+    const id = localStorage.getItem('active_paper_id');
+    setActiveTitle(title);
+    setActiveId(id);
+    
+    if (title) {
+      setMessages([
+        {
+          id: 'welcome',
+          role: 'assistant',
+          content: `Hello! I am your AI Research Assistant. I've loaded the paper: "${title}". You can ask me any questions about it!`,
+          timestamp: new Date()
+        }
+      ]);
+    } else {
+      setMessages([
+        {
+          id: 'welcome',
+          role: 'assistant',
+          content: "Hello! I am your AI Research Assistant. It looks like you haven't uploaded or selected a paper recently. Please upload a PDF or select a paper from Search so that I can answer questions using its context.",
+          timestamp: new Date()
+        }
+      ]);
+    }
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
@@ -51,7 +81,15 @@ export default function Chat() {
 
     try {
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-      const response = await axios.post(`${baseUrl}/api/qa`, { query: currentInput });
+      const paperId = localStorage.getItem('active_paper_id');
+      const paperTitle = localStorage.getItem('active_paper_title');
+      const paperAuthors = localStorage.getItem('active_paper_authors');
+      const response = await axios.post(`${baseUrl}/api/qa`, { 
+        query: currentInput,
+        paper_id: paperId,
+        paper_title: paperTitle,
+        paper_authors: paperAuthors
+      });
       
       const assistantMessage: Message = {
         id: Math.random().toString(36).substring(7),
@@ -70,37 +108,73 @@ export default function Chat() {
   };
 
   const clearChat = () => {
+    const title = localStorage.getItem('active_paper_title');
     setMessages([
       {
         id: 'welcome',
         role: 'assistant',
-        content: "Hello! I am your AI Research Assistant. You can ask me questions about any research papers you have uploaded. How can I help you today?",
+        content: title 
+          ? `Hello! I am your AI Research Assistant. I've loaded the paper: "${title}". You can ask me any questions about it!`
+          : "Hello! I am your AI Research Assistant. It looks like you haven't uploaded or selected a paper recently. Please upload a PDF or select a paper from Search so that I can answer questions using its context.",
         timestamp: new Date()
       }
     ]);
     setError('');
   };
 
+  const unloadPaper = () => {
+    localStorage.removeItem('active_paper_id');
+    localStorage.removeItem('active_paper_title');
+    localStorage.removeItem('active_paper_authors');
+    setActiveTitle(null);
+    setActiveId(null);
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: "Hello! I am your AI Research Assistant. The active paper has been unloaded. Please upload a PDF or select a paper from Search to start a new Q&A session.",
+        timestamp: new Date()
+      }
+    ]);
+  };
+
   return (
     <div className="max-w-4xl mx-auto flex flex-col h-[calc(100vh-12rem)] bg-white rounded-2xl border border-gray-200 shadow-md overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-primary-100 text-primary-600 rounded-lg">
+        <div className="flex items-center space-x-3 max-w-[70%]">
+          <div className="p-2 bg-primary-100 text-primary-600 rounded-lg flex-shrink-0">
             <Bot className="w-6 h-6" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Research Assistant Chat</h1>
-            <p className="text-xs text-gray-500">Retrieves context from your uploaded papers</p>
+          <div className="min-w-0">
+            <h1 className="text-lg font-bold text-gray-900 leading-tight">Research Assistant Chat</h1>
+            {activeTitle ? (
+              <p className="text-xs text-primary-600 font-semibold truncate" title={activeTitle}>
+                Chatting about: {activeTitle}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-500">Retrieves context from your uploaded papers</p>
+            )}
           </div>
         </div>
-        <button
-          onClick={clearChat}
-          className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition duration-150"
-          title="Clear Conversation"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
+        <div className="flex items-center space-x-2">
+          {activeTitle && (
+            <button
+              onClick={unloadPaper}
+              className="px-3 py-1.5 text-xs text-gray-500 hover:text-red-500 rounded-lg hover:bg-gray-100 transition duration-150 border border-gray-200 font-medium"
+              title="Unload Paper"
+            >
+              Unload Paper
+            </button>
+          )}
+          <button
+            onClick={clearChat}
+            className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 transition duration-150"
+            title="Clear Conversation"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Messages */}
