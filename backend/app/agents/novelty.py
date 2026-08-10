@@ -105,9 +105,22 @@ def novelty_check_agent(state: AgentState) -> dict:
         else:
             other_papers.append(p)
             
+    # Sort exact_matches by closeness of title length (shorter difference first)
+    if norm_extracted:
+        exact_matches.sort(key=lambda p: abs(len(normalize_title(p.get("title", ""))) - len(norm_extracted)))
+        
     # Combine lists so exact matches are evaluated first
     sorted_papers = exact_matches + other_papers
     
+    is_duplicate = False
+    duplicate_details = ""
+    for p in exact_matches:
+        if normalize_title(p.get("title", "")) == norm_extracted:
+            is_duplicate = True
+            authors_str = ", ".join(p.get("authors", []))
+            duplicate_details = f"Title: '{p.get('title')}', Authors: '{authors_str}', Source: {p.get('source')}"
+            break
+            
     similar_papers = []
     # Take the top 4 most relevant papers
     for p in sorted_papers[:4]:
@@ -123,6 +136,8 @@ def novelty_check_agent(state: AgentState) -> dict:
     current_results = state.get("results", {})
     current_results["extracted_title"] = extracted_title
     current_results["similar_papers"] = similar_papers
+    current_results["is_duplicate"] = is_duplicate
+    current_results["duplicate_details"] = duplicate_details
     
     return {"results": current_results}
 
@@ -141,10 +156,16 @@ def similarity_analysis_agent(state: AgentState) -> dict:
         api_key=settings.API_KEY,
         base_url=settings.BASE_URL
     )    
+    
+    is_duplicate = results.get("is_duplicate", False)
+    duplicate_notice = ""
+    if is_duplicate:
+        duplicate_notice = f"\nNOTE: An exact match or very close match of this paper was found in the search results: {results.get('duplicate_details')}. Treat this paper as ALREADY PUBLISHED and focus your analysis on confirming this duplicate status.\n"
+        
     comparison_prompt = f"""
     You are an expert peer reviewer. Compare the following uploaded research paper with these similar existing papers.
     Analyze methodology, contributions, and gaps.
-    
+    {duplicate_notice}
     Uploaded Paper Title (extracted): {extracted_title}
     Uploaded Paper (first 5000 chars):
     {text[:5000]}
@@ -174,10 +195,19 @@ def novelty_report_agent(state: AgentState) -> dict:
         base_url=settings.BASE_URL
     )
     
+    is_duplicate = results.get("is_duplicate", False)
+    duplicate_warning = ""
+    if is_duplicate:
+        duplicate_warning = f"""
+        CRITICAL WARNING: The uploaded paper has been identified as an exact match to an already published paper:
+        {results.get('duplicate_details')}
+        You MUST set the "Overall Novelty Score" to 0. Under "Duplicate Ideas", state that this is an existing published paper, and list its details.
+        """
+        
     report_prompt = f"""
     Based on this similarity analysis, generate a final Novelty Report.
     Format it as a valid JSON object.
-    
+    {duplicate_warning}
     Format requirements:
     Return a JSON object with the following keys:
     - "Overall Novelty Score": (an integer from 0 to 100 representing the score)
@@ -209,6 +239,24 @@ def novelty_report_agent(state: AgentState) -> dict:
     try:
         # Validate and format JSON nicely
         parsed = json.loads(content)
+        
+        # Programmatic enforcement
+        if results.get("is_duplicate"):
+            for k in list(parsed.keys()):
+                if "score" in k.lower():
+                    parsed[k] = 0
+            if "Overall Novelty Score" not in parsed:
+                parsed["Overall Novelty Score"] = 0
+                
+            if "Duplicate Ideas" not in parsed or not parsed["Duplicate Ideas"]:
+                parsed["Duplicate Ideas"] = ["This is an existing published paper."]
+            elif not any("existing published paper" in str(x).lower() for x in parsed["Duplicate Ideas"]):
+                parsed["Duplicate Ideas"].insert(0, "This is an existing published paper.")
+                
+            details = results.get("duplicate_details")
+            if details and not any(details in str(x) for x in parsed["Duplicate Ideas"]):
+                parsed["Duplicate Ideas"].append(f"Publication details: {details}")
+                
         formatted_content = json.dumps(parsed, indent=2)
     except Exception as e:
         # Fallback to raw content if parsing fails
