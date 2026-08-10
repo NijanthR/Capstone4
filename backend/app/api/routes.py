@@ -1,12 +1,71 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Response
 from pydantic import BaseModel
 from app.agents.graph import research_graph
+from app.core.config import settings
 import os
 import shutil
+import httpx
+
 
 router = APIRouter()
 
 active_pdf_path = None
+
+class TTSRequest(BaseModel):
+    text: str
+    voice: str | None = None
+
+@router.post("/audio/tts")
+async def text_to_speech(request: TTSRequest):
+    if not settings.API_KEY:
+        raise HTTPException(status_code=400, detail="API key is missing.")
+    try:
+        headers = {"Authorization": f"Bearer {settings.API_KEY}"}
+        payload = {
+            "model": settings.TTS_MODEL,
+            "input": request.text,
+            "voice": request.voice or "alloy"
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{settings.BASE_URL}/audio/speech",
+                json=payload,
+                headers=headers,
+                timeout=30.0
+            )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"TTS error: {resp.text}")
+        return Response(content=resp.content, media_type="audio/mpeg")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/audio/transcribe")
+async def transcribe_audio(file: UploadFile = File(...)):
+    if not settings.API_KEY:
+        raise HTTPException(status_code=400, detail="API key is missing.")
+    try:
+        audio_bytes = await file.read()
+        headers = {"Authorization": f"Bearer {settings.API_KEY}"}
+        files = {
+            'file': (file.filename or 'speech.webm', audio_bytes, file.content_type or 'audio/webm')
+        }
+        data = {
+            'model': settings.STT_MODEL
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{settings.BASE_URL}/audio/transcriptions",
+                headers=headers,
+                files=files,
+                data=data,
+                timeout=60.0
+            )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"STT error: {resp.text}")
+        return resp.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 class SearchRequest(BaseModel):
     query: str
@@ -169,7 +228,7 @@ async def select_paper(request: SelectPaperRequest):
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
 @router.post("/qa")
-def ask_question(request: QARequest):
+async def ask_question(request: QARequest):
     try:
         # QA runs isolated for follow-ups
         from app.agents.qa import qa_agent
@@ -188,6 +247,62 @@ def ask_question(request: QARequest):
         }
         
         result = qa_agent(state)
-        return result["results"]
+        content = result["results"].get("answer", "")
+        
+        import json
+        answer_text = ""
+        image_url = None
+        
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        elif content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+        
+        try:
+            parsed = json.loads(content)
+            answer_text = parsed.get("answer", "")
+            image_prompt = parsed.get("image_prompt", None)
+            
+            if image_prompt:
+                # Try calling Navigate Labs AI image generator
+                try:
+                    headers = {"Authorization": f"Bearer {settings.API_KEY}"}
+                    payload = {
+                        "model": settings.IMAGE_GENERATION_MODEL,
+                        "prompt": image_prompt,
+                        "n": 1,
+                        "size": "1024x1024"
+                    }
+                    async with httpx.AsyncClient() as client:
+                        resp = await client.post(
+                            f"{settings.BASE_URL}/images/generations",
+                            headers=headers,
+                            json=payload,
+                            timeout=60.0
+                        )
+                    if resp.status_code == 200:
+                        resp_data = resp.json()
+                        b64_data = resp_data.get("data", [{}])[0].get("b64_json")
+                        if b64_data:
+                            image_url = f"data:image/png;base64,{b64_data}"
+                        else:
+                            image_url = resp_data.get("data", [{}])[0].get("url")
+                    else:
+                        print(f"Custom image generation failed with status {resp.status_code}: {resp.text}")
+                        raise RuntimeError("Failed to generate image via Navigate Labs AI API")
+                except Exception as img_err:
+                    print(f"Error during custom image generation: {img_err}. Falling back to Pollinations AI.")
+                    import urllib.parse
+                    encoded_prompt = urllib.parse.quote(image_prompt)
+                    image_url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&nologo=true"
+        except Exception as json_err:
+            print(f"Failed to parse QA response as JSON: {json_err}. Raw content: {content}")
+            answer_text = content
+            
+        return {"answer": answer_text, "image_url": image_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

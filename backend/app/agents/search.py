@@ -75,15 +75,15 @@ def search_ddg_sync(query):
         forbidden_domains = ["linkedin.com", "youtube.com", "medium.com", "github.com"]
         
         with DDGS() as ddgs:
-            for r in ddgs.text(search_query, max_results=30):
+            for r in ddgs.text(search_query, max_results=60):
                 href = r.get("href", "").lower()
                 
                 # Must not contain forbidden domains
                 if any(fd in href for fd in forbidden_domains):
                     continue
                     
-                # Strict PDF filter: must end in .pdf or be from a trusted domain
-                is_pdf = href.endswith(".pdf")
+                # Strict PDF filter: must be a PDF URL or from a trusted domain
+                is_pdf = is_pdf_url(href)
                 is_trusted = any(domain in href for domain in allowed_domains)
                 
                 if not (is_pdf or is_trusted):
@@ -213,7 +213,8 @@ def is_pdf_url(url: str) -> bool:
     if not url:
         return False
     url_lower = url.lower()
-    return url_lower.endswith(".pdf") or "/pdf/" in url_lower or "/pdf?" in url_lower
+    clean_url = url_lower.split('?')[0].split('#')[0]
+    return clean_url.endswith(".pdf") or "/pdf/" in url_lower or "/pdf?" in url_lower
 
 def search_agent(state: AgentState) -> dict:
     """Search for research papers across multiple APIs."""

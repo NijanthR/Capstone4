@@ -265,3 +265,6 @@ def novelty_report_agent(state: AgentState) -> dict:
     current_results = state.get("results", {})
     current_results["novelty_report"] = formatted_content
     return {"results": current_results}
+
+
+
