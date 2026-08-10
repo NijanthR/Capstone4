@@ -19,3 +19,5 @@ class PaperMetadata(Base):
     url = Column(String)
     source = Column(String) # arxiv, upload, etc.
     upload_timestamp = Column(DateTime, default=datetime.utcnow)
+    extracted_analysis = Column(Text, nullable=True)
+    comparison_results = Column(Text, nullable=True)
