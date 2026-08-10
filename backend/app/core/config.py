@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # LLM Settings
     API_KEY: str = os.getenv("API_KEY", "")
     BASE_URL: str = os.getenv("BASE_URL", "")
+    TTS_MODEL: str = os.getenv("TTS_MODEL", "gpt-4o-mini-tts")
+    STT_MODEL: str = os.getenv("STT_MODEL", "whisper-1")
+    IMAGE_GENERATION_MODEL: str = os.getenv("IMAGE_GENERATION_MODEL", "imagen-4.0-fast-generate-001")
     
     # Search API Settings
     CORE_API_KEY: str = os.getenv("CORE_API_KEY", "")

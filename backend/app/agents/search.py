@@ -19,7 +19,7 @@ if not hasattr(requests.Session, "_patched"):
 import arxiv
 import re
 from datetime import datetime
-from ddgs import DDGS
+from duckduckgo_search import DDGS
 from urllib.parse import quote
 from app.agents.router import AgentState
 from app.core.config import settings
