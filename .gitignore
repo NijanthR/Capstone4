@@ -17,6 +17,8 @@ backend/app/temp_uploads/*
 .env
 *.env
 *.env.*
+!*.env.example
+
 
 # Node.js
 node_modules/
