@@ -15,7 +15,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def check_and_update_schema():
-    from sqlalchemy import text
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    if not inspector.has_table("paper_metadata"):
+        return  # Table doesn't exist yet, metadata.create_all() will create it with the full schema
+
     with engine.connect() as conn:
         # Check if columns exist in paper_metadata table
         try:
