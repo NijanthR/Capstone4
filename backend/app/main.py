@@ -30,10 +30,23 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(title=settings.PROJECT_NAME)
 
 # Setup CORS
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+]
+
+cors_origins_env = os.getenv("CORS_ORIGINS")
+if cors_origins_env:
+    origins.extend([o.strip() for o in cors_origins_env.split(",")])
+else:
+    # If no specific origins are provided, fallback to wildcard (credentials must be False)
+    origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # For development
-    allow_credentials=True,
+    allow_origins=origins,
+    allow_credentials=False if "*" in origins else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
