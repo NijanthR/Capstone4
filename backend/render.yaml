@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: researchai-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "true"
+      - key: API_KEY
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: SEMANTIC_SCHOLAR_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:///app/researchai.db
+    healthCheckPath: /
+    instanceSize: free
