@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  MessageSquare, Send, Bot, User, Trash2, BookOpen, X,
+  Send, Bot, User, Trash2, BookOpen, X,
   Mic, MicOff, Paperclip, Volume2, VolumeX, Sparkles, AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
@@ -36,7 +36,7 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<any>(null);
+  // const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -223,7 +223,7 @@ You can ask me questions via text or voice, generate system diagrams, or compare
     }
   };
 
-  const stopRecording = (submit = false) => {
+  const stopRecording = (_submit = false) => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
     }
