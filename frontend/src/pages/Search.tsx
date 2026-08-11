@@ -22,7 +22,7 @@ export default function Search() {
     setSummary(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const response = await axios.post(`${baseUrl}/api/search`, { query });
       setResults(response.data.search_results || []);
     } catch (err) {
@@ -41,7 +41,7 @@ export default function Search() {
     setError('');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const response = await axios.post(`${baseUrl}/api/select_paper`, {
         pdf_url: paper.pdf_url,
         title: paper.title

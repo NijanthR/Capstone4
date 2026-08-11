@@ -24,7 +24,7 @@ export default function Upload() {
     formData.append('is_own_research', String(isOwnResearch));
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const response = await axios.post(`${baseUrl}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

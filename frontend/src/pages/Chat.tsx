@@ -106,7 +106,7 @@ You can ask me questions via text or voice, generate system diagrams, or compare
 
     try {
       setSpeakingMsgId(msgId);
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const response = await axios.post(`${baseUrl}/api/audio/tts`, {
         text: cleanText
       }, {
@@ -185,7 +185,7 @@ You can ask me questions via text or voice, generate system diagrams, or compare
         stream.getTracks().forEach(track => track.stop());
         
         try {
-          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+          const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
           const formData = new FormData();
           
           let ext = 'webm';
@@ -263,7 +263,7 @@ You can ask me questions via text or voice, generate system diagrams, or compare
     setError('');
 
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const paperId = localStorage.getItem('active_paper_id');
       const paperTitle = localStorage.getItem('active_paper_title');
       const paperAuthors = localStorage.getItem('active_paper_authors');
@@ -331,7 +331,7 @@ You can ask me questions via text or voice, generate system diagrams, or compare
     formData.append('is_own_research', 'false');
     
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+      const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
       const response = await axios.post(`${baseUrl}/api/upload`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
